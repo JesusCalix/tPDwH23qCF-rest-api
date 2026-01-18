@@ -58,7 +58,10 @@ class MetricQuery(BaseModel):
     @field_validator("sensors")
     @classmethod
     def split_sensors(csl, values):
-        return [int(v) for v in values.split(",")]
+        try:
+            return [int(v) for v in values.split(",")]
+        except ValueError:
+            raise ValueError("Sensors must be a comma-separated list of integers.")
 
     @field_validator("metrics")
     @classmethod
