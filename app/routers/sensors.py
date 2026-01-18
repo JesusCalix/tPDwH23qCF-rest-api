@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models.sensors import Sensor
 from app.schemas import SensorCreate, SensorResponse
-
 
 router = APIRouter(prefix="/sensors")
 
 
 @router.post("/", status_code=201, response_model=SensorResponse)
-def create_sensor(sensor: SensorCreate, db=Depends(get_db)):
+def create_sensor(sensor: SensorCreate, db: Session = Depends(get_db)):
     item = Sensor(**sensor.model_dump())
 
     db.add(item)

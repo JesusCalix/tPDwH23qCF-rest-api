@@ -1,6 +1,7 @@
-from typing import Optional
-from pydantic import BaseModel, model_validator, field_validator, ConfigDict
 from datetime import datetime, time
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 
 class SensorCreate(BaseModel):
@@ -17,12 +18,11 @@ class SensorCreate(BaseModel):
 
 
 class SensorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     sensor_id: int
     name: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MetricCreate(BaseModel):
@@ -41,12 +41,11 @@ class MetricCreate(BaseModel):
 
 
 class MetricResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     sensor_id: int
     metric_name: str
     metric_value: float
-
-    class Config:
-        from_attributes = True
 
 
 class MetricQuery(BaseModel):
@@ -99,12 +98,10 @@ class MetricQuery(BaseModel):
 
 
 class MetricQueryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     sensor_id: int
     metric_name: str
-    average: Optional[float] | None = None
-    min: Optional[float] | None = None
-    max: Optional[float] | None = None
-    sum: Optional[float] | None = None
-
-    class Config:
-        from_attributes = True
+    average: Optional[float] = None
+    min: Optional[float] = None
+    max: Optional[float] = None
+    sum: Optional[float] = None

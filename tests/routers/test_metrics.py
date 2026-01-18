@@ -57,11 +57,23 @@ def test_get_metrics(query_params, expected_response, test_db):
 
 
 def test_get_metrics_invalid_requests(test_db):
-    response = client.get("metrics/query?sensors=1&metrics=temperature&statistic=fake_stat")
+    response = client.get(
+        "metrics/query?sensors=1&metrics=temperature&statistic=fake_stat"
+    )
     assert "Statistic must be one of " in response.text
-    
-    response = client.get("metrics/query?sensors=1&metrics=temperature&statistic=average&date_from=2025-01-01")
-    assert response.text == "Validation errors:\nField: ('query',), Error: Value error, Both date_from and date_to must be provided together."
 
-    response = client.get("metrics/query?sensors=1&metrics=temperature&statistic=average&date_from=2025-01-01&date_to=12-31-2025")
-    assert response.text == "Validation errors:\nField: ('query', 'date_to'), Error: Value error, Date must be in ISO format YYYY-MM-DD."
+    response = client.get(
+        "metrics/query?sensors=1&metrics=temperature&statistic=average&date_from=2025-01-01"
+    )
+    assert (
+        response.text
+        == "Validation errors:\nField: ('query',), Error: Value error, Both date_from and date_to must be provided together."
+    )
+
+    response = client.get(
+        "metrics/query?sensors=1&metrics=temperature&statistic=average&date_from=2025-01-01&date_to=12-31-2025"
+    )
+    assert (
+        response.text
+        == "Validation errors:\nField: ('query', 'date_to'), Error: Value error, Date must be in ISO format YYYY-MM-DD."
+    )

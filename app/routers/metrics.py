@@ -1,16 +1,26 @@
-from sqlalchemy import func
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models.metrics import Metric
-from app.schemas import MetricCreate, MetricResponse, MetricQueryResponse, MetricQuery
-from sqlalchemy.exc import IntegrityError
-from typing import Annotated
+from app.schemas import MetricCreate, MetricQuery, MetricQueryResponse, MetricResponse
+
+STAT_FUNCS = {
+    "average": func.avg,
+    "max": func.max,
+    "min": func.min,
+    "sum": func.sum,
+}
 
 router = APIRouter(prefix="/metrics")
 
 
 @router.post("/", status_code=201, response_model=MetricResponse)
-def create_metric(metric: MetricCreate, db=Depends(get_db)):
+def create_metric(metric: MetricCreate, db: Session = Depends(get_db)):
     try:
         record = Metric(**metric.model_dump())
 
@@ -19,7 +29,7 @@ def create_metric(metric: MetricCreate, db=Depends(get_db)):
         db.refresh(record)
 
         return record
-    except IntegrityError as e:
+    except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=409, detail="Integrity error: Sensor id doesn't exist."
@@ -31,52 +41,26 @@ def create_metric(metric: MetricCreate, db=Depends(get_db)):
     response_model=list[MetricQueryResponse],
     response_model_exclude_unset=True,
 )
-def get_metrics(query: Annotated[MetricQuery, Query()], db=Depends(get_db)):
-    print("Query Params:", query)
+def get_metrics(query: Annotated[MetricQuery, Query()], db: Session = Depends(get_db)):
+    statistic = query.statistic.lower()
+    stat_func = STAT_FUNCS.get(statistic)
 
-    query_db = db.query(Metric).filter(
-        Metric.sensor_id.in_(query.sensors),
-        Metric.metric_name.in_(query.metrics),
-        Metric.created_at >= query.date_from,
-        Metric.created_at <= query.date_to,
+    query_stmnt = (
+        select(
+            Metric.sensor_id,
+            Metric.metric_name,
+            stat_func(Metric.metric_value).label(statistic),
+        )
+        .where(
+            Metric.sensor_id.in_(query.sensors),
+            Metric.metric_name.in_(query.metrics),
+            Metric.created_at >= query.date_from,
+            Metric.created_at <= query.date_to,
+        )
+        .group_by(Metric.sensor_id, Metric.metric_name)
     )
 
-    statistic = query.statistic.lower()
-
-    if statistic == "average":
-        query_db = query_db.group_by(
-            Metric.sensor_id, Metric.metric_name
-        ).with_entities(
-            Metric.sensor_id,
-            Metric.metric_name,
-            func.avg(Metric.metric_value).label("average"),
-        )
-    elif statistic == "max":
-        query_db = query_db.group_by(
-            Metric.sensor_id, Metric.metric_name
-        ).with_entities(
-            Metric.sensor_id,
-            Metric.metric_name,
-            func.max(Metric.metric_value).label("max"),
-        )
-    elif statistic == "min":
-        query_db = query_db.group_by(
-            Metric.sensor_id, Metric.metric_name
-        ).with_entities(
-            Metric.sensor_id,
-            Metric.metric_name,
-            func.min(Metric.metric_value).label("min"),
-        )
-    elif statistic == "sum":
-        query_db = query_db.group_by(
-            Metric.sensor_id, Metric.metric_name
-        ).with_entities(
-            Metric.sensor_id,
-            Metric.metric_name,
-            func.sum(Metric.metric_value).label("sum"),
-        )
-
-    result = query_db.all()
+    result = db.execute(query_stmnt).all()
 
     if not result:
         raise HTTPException(
@@ -84,4 +68,3 @@ def get_metrics(query: Annotated[MetricQuery, Query()], db=Depends(get_db)):
         )
 
     return result
-

@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi.responses import PlainTextResponse
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from app.routers import metrics, sensors
-from app.database import engine, Base
+from fastapi.responses import PlainTextResponse
+
+from app.database import Base, engine
 from app.insert_data import insert_sample_data
+from app.routers import metrics, sensors
 
 
 @asynccontextmanager
@@ -23,7 +25,7 @@ app.include_router(metrics.router)
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"Welcome to my weather metrics rest API."}
 
 
 # Custome handler, at the moment using the fastapi provided one

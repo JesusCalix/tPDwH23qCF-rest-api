@@ -1,18 +1,20 @@
-import os
-import pytest
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
-from app.database import Base, get_db
-from app.main import app
-from app.models.sensors import Sensor
-from app.models.metrics import Metric
-from sqlalchemy import insert
 from datetime import datetime
 
-# Create test database engine
-TEST_DATABASE_URL = "sqlite:///./test.db"
+import pytest
+from sqlalchemy import create_engine, event, insert
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.database import Base, get_db
+from app.main import app
+from app.models.metrics import Metric
+from app.models.sensors import Sensor
+
+TEST_DATABASE_URL = "sqlite:///:memory:"
 test_engine = create_engine(
-    TEST_DATABASE_URL, connect_args={"check_same_thread": False}
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 
 
@@ -37,7 +39,6 @@ def test_db():
         test_sensor_data(db)
         test_metric_data(db)
         db.commit()
-        db.close()
 
         try:
             yield db
@@ -50,10 +51,6 @@ def test_db():
 
     Base.metadata.drop_all(bind=test_engine)
     app.dependency_overrides.clear()
-
-    # Delete test database file
-    if os.path.exists("test.db"):
-        os.remove("test.db")
 
 
 def test_sensor_data(db):
