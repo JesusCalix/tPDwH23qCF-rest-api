@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.database import Base, engine
 from app.insert_data import insert_sample_data
@@ -36,3 +36,10 @@ async def validation_exception_handler(request, exc: RequestValidationError):
         message += f"\nField: {error['loc']}, Error: {error['msg']}"
 
     return PlainTextResponse(message, status_code=422)
+
+@app.exception_handler(Exception)
+async def unwanted_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred."},
+    )
