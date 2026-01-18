@@ -1,7 +1,7 @@
 from datetime import datetime, time
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator, Field
 
 
 class SensorCreate(BaseModel):
@@ -49,11 +49,11 @@ class MetricResponse(BaseModel):
 
 
 class MetricQuery(BaseModel):
-    sensors: str
-    metrics: str
-    statistic: str
-    date_from: Optional[str] = None
-    date_to: Optional[str] = None
+    sensors: str =  Field(description="Comma-separated list of sensor IDs (e.g., '1,2,3')")
+    metrics: str = Field(description="Comma-separated list of metric names (e.g., 'temperature,humidity')")
+    statistic: str = Field(description="Statistical aggregation to apply: average, min, max, sum")
+    date_from: Optional[str] = Field(default=None, description="Start date in ISO format (YYYY-MM-DD)")
+    date_to: Optional[str] = Field(default=None, description="End date in ISO format (YYYY-MM-DD)")
 
     @field_validator("sensors")
     @classmethod
