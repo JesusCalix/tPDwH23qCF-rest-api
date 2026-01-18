@@ -1,6 +1,7 @@
-from fastapi.testclient import TestClient
-from app.main import app
 import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
 
 client = TestClient(app)
 
@@ -28,14 +29,16 @@ def test_create_metric_invalid_sensor(test_db):
 
 
 @pytest.mark.parametrize(
-    "query_params, expected_response",
+    "query_params, expected_status_code,expected_response",
     [
         (
             "sensors=1&metrics=temperature&statistic=average&date_from=2025-01-01&date_to=2025-01-31",
+            200,
             [{"sensor_id": 1, "metric_name": "temperature", "average": 23.5}],
         ),
         (
             "sensors=1,2&metrics=temperature,humidity&statistic=min&date_from=2025-01-01&date_to=2025-01-15",
+            200,
             [
                 {"sensor_id": 1, "metric_name": "humidity", "min": 55.0},
                 {"sensor_id": 1, "metric_name": "temperature", "min": 32.0},
@@ -44,15 +47,21 @@ def test_create_metric_invalid_sensor(test_db):
         ),
         (
             "sensors=2&metrics=humidity&statistic=max",
+            200,
             [
                 {"sensor_id": 2, "metric_name": "humidity", "max": 35.0},
             ],
         ),
+        (
+            "sensors=999&metrics=humidity&statistic=max",
+            404,
+            {'detail': 'No data found for the given query.'}
+        ),
     ],
 )
-def test_get_metrics(query_params, expected_response, test_db):
+def test_get_metrics(query_params, expected_status_code, expected_response, test_db):
     response = client.get("metrics/query?" + query_params)
-    assert response.status_code == 200
+    assert response.status_code == expected_status_code
     assert response.json() == expected_response
 
 
