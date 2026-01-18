@@ -55,7 +55,7 @@ def test_create_metric_invalid_sensor(test_db):
         (
             "sensors=999&metrics=humidity&statistic=max",
             404,
-            {'detail': 'No data found for the given query.'}
+            {"detail": "No data found for the given query."},
         ),
     ],
 )

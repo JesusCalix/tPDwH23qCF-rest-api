@@ -25,8 +25,19 @@
 - Use database migrations like Alembic and connection pooling in a production deployment.
 - Add authentication.
 
+# Database schemas
+sensors{
+    sensor_id int pk,
+    name str,
+    created_at timestamp
+}
 
+metrics{
+    metric_id int pk,
+    sensor_id int fk,
+    created_at timestamp,
+    metric_name str,
+    metric_value double
+}
 
-
-# diagram of the present design and aws design
 

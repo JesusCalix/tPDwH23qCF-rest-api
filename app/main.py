@@ -37,6 +37,7 @@ async def validation_exception_handler(request, exc: RequestValidationError):
 
     return PlainTextResponse(message, status_code=422)
 
+
 @app.exception_handler(Exception)
 async def unwanted_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
