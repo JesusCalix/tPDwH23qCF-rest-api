@@ -21,6 +21,18 @@ router = APIRouter(prefix="/metrics")
 
 @router.post("/", status_code=201, response_model=MetricResponse)
 def create_metric(metric: MetricCreate, db: Session = Depends(get_db)):
+    """Create a new metric record in the database.
+
+    Args:
+        metric: The metric data to create.
+        db: Database session dependency.
+
+    Returns:
+        The newly created metric with its assigned ID.
+
+    Raises:
+        HTTPException: 409 if the referenced sensor_id doesn't exist.
+    """
     try:
         record = Metric(**metric.model_dump())
 
@@ -42,6 +54,21 @@ def create_metric(metric: MetricCreate, db: Session = Depends(get_db)):
     response_model_exclude_unset=True,
 )
 def get_metrics(query: Annotated[MetricQuery, Query()], db: Session = Depends(get_db)):
+    """Query metrics with aggregation statistics.
+
+    Retrieves metrics filtered by sensors, metric names, and date range,
+    then applies the specified statistical aggregation (average, max, min, sum).
+
+    Args:
+        query: Query parameters including sensors, metrics, date range, and statistic type.
+        db: Database session dependency.
+
+    Returns:
+        List of aggregated metric results grouped by sensor_id and metric_name.
+
+    Raises:
+        HTTPException: 404 if no data matches the query criteria.
+    """
     statistic = query.statistic.lower()
     stat_func = STAT_FUNCS.get(statistic)
 
